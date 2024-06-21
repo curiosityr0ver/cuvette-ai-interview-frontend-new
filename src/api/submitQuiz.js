@@ -1,13 +1,12 @@
 import axios from 'axios';
 
-const submitQuiz = async (
-    questions,
-    answers
+const SERVER_ORIGIN = import.meta.env.VITE_SERVER_ORIGIN;
 
-) => {
-
+const submitQuiz = async (questions, answers) => {
+    console.log(SERVER_ORIGIN);
     try {
-        const response = await axios.post('http://localhost:3000/quiz/batch', {
+        console.log('Submitting quiz:', questions, answers);
+        const response = await axios.post(`${SERVER_ORIGIN}/quiz/batch`, {
             questions,
             answers,
         });

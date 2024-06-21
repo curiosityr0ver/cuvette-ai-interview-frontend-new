@@ -1,9 +1,11 @@
 import axios from 'axios';
 
+const SERVER_ORIGIN = import.meta.env.VITE_SERVER_ORIGIN;
+
 const submitIntro = async (formData) => {
 
     try {
-        const response = await axios.post('http://localhost:3000/intro', formData, {
+        const response = await axios.post(`${SERVER_ORIGIN}/intro`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },

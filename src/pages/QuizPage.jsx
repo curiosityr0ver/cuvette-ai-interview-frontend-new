@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Question from "./Question";
 import styles from "./QuizPage.module.css";
@@ -11,6 +11,8 @@ function QuizPage() {
 	const [questionStates, setQuestionStates] = useState([]);
 	const [transcripts, setTranscripts] = useState([]);
 	const [completed, setCompleted] = useState(false);
+	const [startTime, setStartTime] = useState(null);
+	const [times, setTimes] = useState([]);
 
 	const navigate = useNavigate();
 
@@ -21,12 +23,17 @@ function QuizPage() {
 			setQuestions(fetchedQuestions);
 			setQuestionStates(Array(fetchedQuestions.length).fill("unattempted"));
 			setTranscripts(Array(fetchedQuestions.length).fill(""));
+			setStartTime(Date.now());
 		};
 
 		fetchQuestions();
 	}, []);
 
 	const handleNext = (transcript, skipped) => {
+		const endTime = Date.now();
+		const timeTaken = endTime - startTime;
+		const newTimes = [...times, timeTaken];
+
 		const newStates = [...questionStates];
 		const newTranscripts = [...transcripts];
 
@@ -39,13 +46,15 @@ function QuizPage() {
 
 		setQuestionStates(newStates);
 		setTranscripts(newTranscripts);
+		setTimes(newTimes);
 
 		if (currentQuestion < questions.length - 1) {
 			setCurrentQuestion(currentQuestion + 1);
 			newStates[currentQuestion + 1] = "current";
+			setStartTime(Date.now());
 		} else {
 			setCompleted(true);
-			handleQuizCompletion(questions, newTranscripts);
+			handleQuizCompletion(questions, newTranscripts, newTimes);
 		}
 	};
 
@@ -57,10 +66,17 @@ function QuizPage() {
 		}
 	}, [currentQuestion, questions]);
 
-	const handleQuizCompletion = async (questions, answers) => {
+	const handleQuizCompletion = async (questions, answers, times) => {
 		try {
 			const result = await submitQuiz(questions, answers);
-			navigate("/result", { state: { result: result.data } });
+			navigate("/result", {
+				state: {
+					result: result.data.answers,
+					questions: questions,
+					answers: answers,
+					times: times,
+				},
+			});
 		} catch (error) {
 			console.error("Failed to submit quiz:", error);
 		}
@@ -70,7 +86,9 @@ function QuizPage() {
 		setCurrentQuestion(0);
 		setQuestionStates(Array(questions.length).fill("unattempted"));
 		setTranscripts(Array(questions.length).fill(""));
+		setTimes([]);
 		setCompleted(false);
+		setStartTime(Date.now());
 	};
 
 	return (
@@ -99,21 +117,9 @@ function QuizPage() {
 					/>
 				)
 			) : (
-				<div className={styles.answerContainer}>
-					<h2 className={styles.subtitle}>All Answers</h2>
-					<ul className={styles.answerList}>
-						{questions.map((question, index) => (
-							<li key={index} className={styles.answerItem}>
-								<strong>{question}</strong>: {transcripts[index] || "Skipped"}
-							</li>
-						))}
-					</ul>
-					<button
-						onClick={handleRestart}
-						className={`${styles.button} ${styles.restartButton}`}
-					>
-						Restart Quiz
-					</button>
+				<div className={styles.loadingContainer}>
+					<div className={styles.loading}></div>
+					<p className={styles.loadingText}>Loading...</p>
 				</div>
 			)}
 		</div>
